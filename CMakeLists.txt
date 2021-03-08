@@ -64,6 +64,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/common_engine)
 include_directories(${CMAKE_SOURCE_DIR}/src/classification_engine)
 include_directories(${CMAKE_SOURCE_DIR}/src/image_preprocessing)
 include_directories(${CMAKE_SOURCE_DIR}/src/detection_engine)
+include_directories(${CMAKE_SOURCE_DIR}/src/ultraface_engine)
 include_directories(${CMAKE_SOURCE_DIR}/src/humanpose_engine)
 
 ##########################################################################################################################
@@ -76,6 +77,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include/common_engine)
 include_directories(${CMAKE_SOURCE_DIR}/include/classification_engine)
 include_directories(${CMAKE_SOURCE_DIR}/include/image_preprocessing)
 include_directories(${CMAKE_SOURCE_DIR}/include/detection_engine)
+include_directories(${CMAKE_SOURCE_DIR}/include/ultraface_engine)
 include_directories(${CMAKE_SOURCE_DIR}/include/humanpose_engine)
 
 ##########################################################################################################################
@@ -124,6 +126,12 @@ add_library(detection_engine
 target_link_libraries(detection_engine engine pose_decoder ${TF_LITE_LIB} ${OpenCV_LIBS})
 add_dependencies(detection_engine engine )
 
+add_library(ultraface_engine
+        src/ultraface_engine/ultraface_engine.cc
+        include/ultraface_engine/ultraface_engine.h)
+target_link_libraries(ultraface_engine engine pose_decoder ${TF_LITE_LIB} ${OpenCV_LIBS})
+add_dependencies(ultraface_engine engine )
+
 add_library(humanpose_engine
         src/humanpose_engine/humanpose_engine.cc
         include/humanpose_engine/humanpose_engine.h)
@@ -146,9 +154,17 @@ add_executable(detection_camera
 target_link_libraries(detection_camera image_preprocessing detection_engine engine label_utils ${OpenCV_LIBS} ${TF_LITE_LIB} ${LIB_EDGETPU})
 add_dependencies(detection_camera image_preprocessing detection_engine engine label_utils )
 
+add_executable(ultraface_camera
+        src/ultraface_camera.cc
+        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
+        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
+        )
+target_link_libraries(ultraface_camera image_preprocessing ultraface_engine engine label_utils ${OpenCV_LIBS} ${TF_LITE_LIB} ${LIB_EDGETPU})
+add_dependencies(ultraface_camera image_preprocessing ultraface_engine engine label_utils )
+
 add_executable(humanpose_camera
         src/humanpose_camera.cc
-       ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
+        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
         ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
         )
 target_link_libraries(humanpose_camera image_preprocessing humanpose_engine engine label_utils pose_decoder ${OpenCV_LIBS} ${TF_LITE_LIB} ${LIB_EDGETPU})
