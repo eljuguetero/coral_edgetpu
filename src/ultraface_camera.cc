@@ -20,10 +20,10 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
 	options.add_options()
 					("model_path", "Path to .tflite/.edgetpu model_file", cxxopts::value<std::string>())
 					("video_source", "Video source.", cxxopts::value<int>()->default_value("0"))
-					("threshold", "Minimum confidence threshold.", cxxopts::value<float>()->default_value("0.5"))
+					("threshold", "Minimum confidence threshold.", cxxopts::value<float>()->default_value("0.3"))
 					("edgetpu", "To run with EdgeTPU.", cxxopts::value<bool>()->default_value("false"))
-					("height", "Camera image height.", cxxopts::value<int>()->default_value("480"))
-					("width", "Camera image width.", cxxopts::value<int>()->default_value("640"))
+					("height", "Camera image height.", cxxopts::value<int>()->default_value("320"))
+					("width", "Camera image width.", cxxopts::value<int>()->default_value("480"))
 					("help", "Print Usage");
 
 	const auto& args = options.parse(argc, argv);
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 	{
 		cam_frame >> frame;
 		const auto& input = edge::GetInputFromImage(frame,required_input_tensor_shape[2],required_input_tensor_shape[1],required_input_tensor_shape[3]);
-		const auto& results = engine.RunInference(input);
+		//const auto& results = engine.RunInference(input);
 		//const auto& detection_result = engine.DetectWithOutputVector(results,threshold);
 		//edge::UltraFaceEngine::img_overlay(frame,detection_result,image_width,image_height);
 
