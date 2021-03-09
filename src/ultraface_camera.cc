@@ -19,7 +19,6 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
 
 	options.add_options()
 					("model_path", "Path to .tflite/.edgetpu model_file", cxxopts::value<std::string>())
-					("label_path", "Path to label file.", cxxopts::value<std::string>())
 					("video_source", "Video source.", cxxopts::value<int>()->default_value("0"))
 					("threshold", "Minimum confidence threshold.", cxxopts::value<float>()->default_value("0.5"))
 					("edgetpu", "To run with EdgeTPU.", cxxopts::value<bool>()->default_value("false"))
@@ -28,7 +27,7 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
 					("help", "Print Usage");
 
 	const auto& args = options.parse(argc, argv);
-	if (args.count("help") || !args.count("model_path") || !args.count("label_path")) {
+	if (args.count("help") || !args.count("model_path")) {
 		std::cerr << options.help() << "\n";
 		exit(0);
 	}
@@ -39,7 +38,6 @@ int main(int argc, char** argv) {
 	const auto &args = parse_args(argc, argv);
 	// Building Interpreter.
 	const auto &model_path = args["model_path"].as<std::string>();
-	const auto &label_path = args["label_path"].as<std::string>();
 	const auto threshold = args["threshold"].as<float>();
 	const auto with_edgetpu = args["edgetpu"].as<bool>();
 	auto image_height = args["height"].as<int>();
@@ -47,7 +45,6 @@ int main(int argc, char** argv) {
 	const auto source = args["video_source"].as<int>();
 
 	std::cout << std::endl << "Model Path : " << model_path << std::endl;
-	std::cout << "Pose Threshold : " << label_path << std::endl;
 	std::cout << "Detection threshold : " << threshold << std::endl;
 	std::cout << "TPU Acceleration : " << std::boolalpha << with_edgetpu << std::endl;
 	std::cout << "Camera Height : " << image_height << std::endl;
@@ -57,7 +54,7 @@ int main(int argc, char** argv) {
 	std::shared_ptr<edgetpu::EdgeTpuContext> edgetpu_context =
 					edgetpu::EdgeTpuManager::GetSingleton()->OpenDevice();
 
-	edge::UltraFaceEngine engine(model_path,label_path,edgetpu_context,with_edgetpu);
+	edge::UltraFaceEngine engine(model_path,edgetpu_context,with_edgetpu);
 	const auto& required_input_tensor_shape = engine.GetInputShape();
 
 	cv::VideoCapture cam_frame;
@@ -100,8 +97,8 @@ int main(int argc, char** argv) {
 		cam_frame >> frame;
 		const auto& input = edge::GetInputFromImage(frame,required_input_tensor_shape[2],required_input_tensor_shape[1],required_input_tensor_shape[3]);
 		const auto& results = engine.RunInference(input);
-		const auto& detection_result = engine.DetectWithOutputVector(results,threshold);
-		edge::UltraFaceEngine::img_overlay(frame,detection_result,image_width,image_height);
+		//const auto& detection_result = engine.DetectWithOutputVector(results,threshold);
+		//edge::UltraFaceEngine::img_overlay(frame,detection_result,image_width,image_height);
 
 		char c=(char)cv::waitKey(25);
 		if(c==27)
