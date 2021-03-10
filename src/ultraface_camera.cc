@@ -22,8 +22,8 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
 					("video_source", "Video source.", cxxopts::value<int>()->default_value("0"))
 					("threshold", "Minimum confidence threshold.", cxxopts::value<float>()->default_value("0.3"))
 					("edgetpu", "To run with EdgeTPU.", cxxopts::value<bool>()->default_value("false"))
-					("height", "Camera image height.", cxxopts::value<int>()->default_value("320"))
-					("width", "Camera image width.", cxxopts::value<int>()->default_value("480"))
+					("height", "Camera image height.", cxxopts::value<int>()->default_value("480"))
+					("width", "Camera image width.", cxxopts::value<int>()->default_value("640"))
 					("help", "Print Usage");
 
 	const auto& args = options.parse(argc, argv);
