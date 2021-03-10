@@ -40,36 +40,13 @@ class UltraFaceEngine : public Engine {
     std::cout << "Detection Engine loaded successfully" << std::endl;
   }
 
-  std::vector<FaceInfo> DetectWithOutputVector(
-    const std::vector<float>& inf_vec, const float& threshold);
+  void InitAll(const float det_score=0.6, const float nms_iou=0.5);
+  std::vector<cv::Rect> Decode(const std::vector<std::vector<float> > &outputs, const cv::Size &img_size, std::vector<float> *out_scores);
 
  private:
-  void generateBBox(std::vector<FaceInfo>& bbox_collection, cv::Mat scores,
-                    cv::Mat boxes, float score_threshold, int num_anchors);
-
-  void nms(std::vector<FaceInfo>& input, std::vector<FaceInfo>& output,
-           int type = blending_nms);
-
- private:
-  int image_w;
-  int image_h;
-
-  float iou_threshold;
-
-  const float mean_vals[3] = {127, 127, 127};
-  const float norm_vals[3] = {1.0 / 128, 1.0 / 128, 1.0 / 128};
-
-  const float center_variance = 0.1;
-  const float size_variance = 0.2;
-  const std::vector<std::vector<float>> min_boxes = {{10.0f, 16.0f, 24.0f},
-                                                     {32.0f, 48.0f},
-                                                     {64.0f, 96.0f},
-                                                     {128.0f, 192.0f, 256.0f}};
-  const std::vector<float> strides = {8.0, 16.0, 32.0, 64.0};
-  std::vector<std::vector<float>> featuremap_size;
-  std::vector<std::vector<float>> shrinkage_size;
-  std::vector<int> w_h_list;
-
+  int iw_, ih_;
+  float th_;
+  float nms_th_;
   std::vector<std::vector<float>> priors = {};
 };
 }  // namespace edge
