@@ -111,4 +111,40 @@ namespace edge {
 		}
 		return output_data;
 	}
+
+    void Engine::RunInference(const std::vector<float>& input_data, std::vector<std::vector<float>> &output_data) {
+
+        auto* input = m_interpreter->typed_input_tensor<float>(0);
+        std::memcpy(input, input_data.data(), input_data.size()*sizeof (float));
+        m_interpreter->Invoke();
+
+        output_data.clear();
+        const auto& output_indices = m_interpreter->outputs();
+        const int num_outputs = output_indices.size();
+        for (int i = 0; i < num_outputs; ++i) {
+            const auto* out_tensor = m_interpreter->tensor(output_indices[i]);
+            assert(out_tensor != nullptr);
+            if (out_tensor->type == kTfLiteUInt8) {
+                const int num_values = out_tensor->bytes;
+                std::vector<float> outdata(num_values);
+                const uint8_t* output = m_interpreter->typed_output_tensor<uint8_t>(i);
+                for (int j = 0; j < num_values; ++j) {
+                    outdata[j] = (output[j] - out_tensor->params.zero_point) * out_tensor->params.scale;
+                }
+                output_data.push_back(outdata);
+            } else if (out_tensor->type == kTfLiteFloat32) {
+                const int num_values = out_tensor->bytes / sizeof(float);
+                std::vector<float> outdata(num_values);
+                const float* output = m_interpreter->typed_output_tensor<float>(i);
+                for (int j = 0; j < num_values; ++j) {
+                    outdata[j] = output[j];
+                }
+                output_data.push_back(outdata);
+            } else {
+                std::cerr << "Tensor " << out_tensor->name
+                          << " has unsupported output type: " << out_tensor->type << std::endl;
+            }
+        }
+    }
+
 }

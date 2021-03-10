@@ -30,8 +30,10 @@ namespace edge {
 		void InitTfLiteWrapperEdgetpu(const std::shared_ptr<edgetpu::EdgeTpuContext>& edgetpu_context);
 		// Exposes the input tensor shape.
 		std::vector<int> GetInputShape();
-		// Does Inference with the model and returns the output tensor concatenated as a vector.
+
+        // Does Inference with the model and returns the output tensor concatenated as a vector.
 		std::vector<float> RunInference(const std::vector<uint8_t>& input_data);
+        void RunInference(const std::vector<float>& input_data, std::vector<std::vector<float>> &output_data);
 
 
 

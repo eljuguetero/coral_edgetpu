@@ -40,6 +40,20 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
   return args;
 }
 
+std::vector<float> GetInputFromImage(const cv::Mat &input_frame, const cv::Size &input_size,
+                                     const double scale=1/128, float mean_value=127.5, bool sw_ch=true)
+{
+    cv::Mat tmp;
+    cv::resize(input_frame, tmp, input_size);
+    if (sw_ch) cv::cvtColor(tmp,tmp,cv::COLOR_BGR2RGB);
+    tmp.convertTo(tmp,CV_32F);
+    tmp-=mean_value;
+    tmp*=scale;
+    cv::Mat flat = tmp.reshape(1, tmp.total()*tmp.channels());
+    std::vector<float> in_vec= tmp.isContinuous()? flat : flat.clone();
+    return in_vec;
+}
+
 int main(int argc, char** argv) {
   const auto& args = parse_args(argc, argv);
   // Building Interpreter.
@@ -100,21 +114,22 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+    std::vector<std::vector<float>> outputs;
   while (true) {
     cam_frame >> frame;
-    const auto& input = edge::GetInputFromImage(
-        frame, required_input_tensor_shape[2], required_input_tensor_shape[1],
-        required_input_tensor_shape[3]);
+
+    const auto& input = GetInputFromImage(frame,{320,240},1.0/128.0,127.5,true);
     std::cout << "required_input_tensor_shape[2] "
               << required_input_tensor_shape[2] << std::endl;
     std::cout << "required_input_tensor_shape[1] "
               << required_input_tensor_shape[1] << std::endl;
     std::cout << "required_input_tensor_shape[3] "
               << required_input_tensor_shape[3] << std::endl;
-    const auto& results = engine.RunInference(input);
-    // const auto& detection_result =
-    // engine.DetectWithOutputVector(results,threshold);
-    // edge::UltraFaceEngine::img_overlay(frame,detection_result,image_width,image_height);
+    engine.RunInference(input,outputs);
+
+//    // const auto& detection_result =
+//    engine.DetectWithOutputVector(results,threshold);
+//    // edge::UltraFaceEngine::img_overlay(frame,detection_result,image_width,image_height);
 
     char c = (char)cv::waitKey(25);
     if (c == 27) break;
