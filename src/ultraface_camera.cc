@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 	{
 		cam_frame >> frame;
 		const auto& input = edge::GetInputFromImage(frame,required_input_tensor_shape[2],required_input_tensor_shape[1],required_input_tensor_shape[3]);
-		//const auto& results = engine.RunInference(input);
+		const auto& results = engine.RunInference(input);
 		//const auto& detection_result = engine.DetectWithOutputVector(results,threshold);
 		//edge::UltraFaceEngine::img_overlay(frame,detection_result,image_width,image_height);
 
