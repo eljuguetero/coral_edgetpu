@@ -114,6 +114,10 @@ namespace edge {
 
     void Engine::RunInference(const std::vector<float>& input_data, std::vector<std::vector<float>> &output_data) {
 
+
+
+        std::cout << m_interpreter->input_tensor(0)->type << " <---> "<< kTfLiteUInt8 << std::endl; std::cout.flush();
+
         auto* input = m_interpreter->typed_input_tensor<float>(0);
         std::memcpy(input, input_data.data(), input_data.size()*sizeof (float));
         m_interpreter->Invoke();

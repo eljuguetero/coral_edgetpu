@@ -41,9 +41,11 @@ class UltraFaceEngine : public Engine {
   }
 
   void InitAll(const float det_score=0.6, const float nms_iou=0.5);
-  std::vector<cv::Rect> Decode(const std::vector<std::vector<float> > &outputs, const cv::Size &img_size, std::vector<float> *out_scores);
+  std::vector<std::pair<cv::Rect, float>> Decode(const std::vector<std::vector<float> > &outputs, const cv::Size &img_size);
+
 
  private:
+ void NMS(std::vector<std::pair<cv::Rect, float>> &input, std::vector<std::pair<cv::Rect, float>> &output);
   int iw_, ih_;
   float th_;
   float nms_th_;

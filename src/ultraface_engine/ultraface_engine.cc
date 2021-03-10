@@ -9,16 +9,16 @@ namespace  {
 inline float clip(float x, float y=1.0F) {
     return  std::min(std::max(0.0F, x), y);
 }
-    const cv::Scalar kMean = {127, 127, 127};
-    const float kScale = 1.0 / 128;
-    const float kCenterVariance = 0.1;
-    const float kSizeVariance = 0.2;
-    const std::vector<std::vector<float>> kMinBoxes = {
-        {10.0f,  16.0f,  24.0f},
-        {32.0f,  48.0f},
-        {64.0f,  96.0f},
-        {128.0f, 192.0f, 256.0f}};
-    const std::vector<float> kStrides = {8.0, 16.0, 32.0, 64.0};
+const cv::Scalar kMean = {127, 127, 127};
+const float kScale = 1.0 / 128;
+const float kCenterVariance = 0.1;
+const float kSizeVariance = 0.2;
+const std::vector<std::vector<float>> kMinBoxes = {
+    {10.0f,  16.0f,  24.0f},
+    {32.0f,  48.0f},
+    {64.0f,  96.0f},
+    {128.0f, 192.0f, 256.0f}};
+const std::vector<float> kStrides = {8.0, 16.0, 32.0, 64.0};
 }
 
 
@@ -63,10 +63,9 @@ void UltraFaceEngine::InitAll(const float det_score, const float nms_iou)
     }
 }
 
-std::vector<cv::Rect> UltraFaceEngine::Decode(const std::vector<std::vector<float>> &outputs, const cv::Size &img_size,  std::vector<float> *out_scores=nullptr)
+std::vector<std::pair<cv::Rect, float>> UltraFaceEngine::Decode(const std::vector<std::vector<float>> &outputs, const cv::Size &img_size)
 {
-    std::vector<cv::Rect> bboxes_candidates;
-    std::vector<float> scores_candidates;
+    std::vector<std::pair<cv::Rect, float>> bboxes_scores, result;
     const float *bboxes_ptr = outputs[0].data();
     const float *scores_ptr = outputs[1].data();
 
@@ -86,23 +85,47 @@ std::vector<cv::Rect> UltraFaceEngine::Decode(const std::vector<std::vector<floa
             box.width = static_cast<int>( clip(w)*frame_width );
             box.height = static_cast<int>( clip(h)*frame_height );
 
-            bboxes_candidates.push_back(box);
-            scores_candidates.push_back(scores_ptr[i * 2 + 1]);
+            bboxes_scores.push_back({box, scores_ptr[i * 2 + 1]});
         }
     }
-    std::vector<int> indices;
-    cv::dnn::NMSBoxes(bboxes_candidates,scores_candidates,th_,nms_th_,indices);
-    std::vector<cv::Rect> faces;
-    if (out_scores){
-        out_scores->clear();
-    }
-    for (auto ii : indices){
-        faces.push_back(bboxes_candidates[ii]);
-        if (out_scores){
-            out_scores->push_back(scores_candidates[ii]);
+    NMS(bboxes_scores, result);
+    return result;
+}
+
+void UltraFaceEngine::NMS(std::vector<std::pair<cv::Rect, float>> &input, std::vector<std::pair<cv::Rect, float>> &output) {
+    std::sort(input.begin(), input.end(), [](const std::pair<cv::Rect, float> &a, const std::pair<cv::Rect, float> &b) { return a.second > b.second; });
+    int box_num = input.size();
+    std::vector<int> merged(box_num, 0);
+
+    for (int i = 0; i < box_num; i++) {
+        if (merged[i])
+            continue;
+        std::vector<std::pair<cv::Rect, float>> buf;
+
+        buf.push_back(input[i]);
+        merged[i] = 1;
+        float h0 = input[i].first.width;
+        float w0 = input[i].first.height;
+
+        float area0 = h0 * w0;
+        for (int j = i + 1; j < box_num; j++) {
+            if (merged[j])
+                continue;
+
+            float inner_area = ( input[i].first&input[j].first ).area();
+            if (inner_area == 0)
+                continue;
+
+            float area1 = input[j].first.area();
+            float score = inner_area / (area0 + area1 - inner_area);
+
+            if (score > nms_th_) {
+                merged[j] = 1;
+                buf.push_back(input[j]);
+            }
         }
+        output.push_back(buf[0]);
     }
-    return faces;
 }
 
 }  // namespace edge

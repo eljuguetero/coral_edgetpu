@@ -129,9 +129,9 @@ int main(int argc, char** argv) {
               << required_input_tensor_shape[3] << std::endl;
     engine.RunInference(input,outputs);
 
-    auto faces_bbox = engine.Decode(outputs, frame.size(),nullptr);
+    auto faces_bbox = engine.Decode(outputs, frame.size());
     for (auto bbox : faces_bbox){
-        cv::rectangle(frame, bbox, {255,1,127}, 4);
+        cv::rectangle(frame, bbox.first, {255,1,127}, 4);
     }
     cv::imshow("DETECTIONS", frame);
     char c = (char)cv::waitKey(25);
