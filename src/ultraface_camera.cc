@@ -113,10 +113,8 @@ int main(int argc, char** argv) {
               << std::endl;
     return 0;
   }
-
   std::vector<std::vector<float>> outputs;
-
-  engine.InitAll();
+  engine.InitAll(0.35);
   while (true) {
     cam_frame >> frame;
 
@@ -134,7 +132,7 @@ int main(int argc, char** argv) {
         cv::rectangle(frame, bbox.first, {255,1,127}, 4);
     }
     cv::imshow("DETECTIONS", frame);
-    char c = (char)cv::waitKey(25);
+    char c = (char)cv::waitKey(1);
     if (c == 27) break;
   }
 }

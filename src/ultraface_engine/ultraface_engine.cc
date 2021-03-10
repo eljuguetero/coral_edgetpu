@@ -98,33 +98,23 @@ void UltraFaceEngine::NMS(std::vector<std::pair<cv::Rect, float>> &input, std::v
     std::vector<int> merged(box_num, 0);
 
     for (int i = 0; i < box_num; i++) {
-        if (merged[i])
-            continue;
-        std::vector<std::pair<cv::Rect, float>> buf;
-
-        buf.push_back(input[i]);
+        if (merged[i]) continue;
         merged[i] = 1;
         float h0 = input[i].first.width;
         float w0 = input[i].first.height;
-
         float area0 = h0 * w0;
+
         for (int j = i + 1; j < box_num; j++) {
-            if (merged[j])
-                continue;
+            if (merged[j]) continue;
 
             float inner_area = ( input[i].first&input[j].first ).area();
-            if (inner_area == 0)
-                continue;
+            if (inner_area == 0) continue;
 
             float area1 = input[j].first.area();
             float score = inner_area / (area0 + area1 - inner_area);
-
-            if (score > nms_th_) {
-                merged[j] = 1;
-                buf.push_back(input[j]);
-            }
+            if (score > nms_th_) merged[j] = 1;
         }
-        output.push_back(buf[0]);
+        output.push_back(input[i]);
     }
 }
 

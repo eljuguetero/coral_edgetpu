@@ -12,21 +12,7 @@
 #include "engine.h"
 #include "opencv2/opencv.hpp"
 
-#define num_featuremap 4
-#define hard_nms 1
-#define blending_nms 2
-
 namespace edge {
-
-typedef struct FaceInfo {
-  float x1;
-  float y1;
-  float x2;
-  float y2;
-  float score;
-
-  float landmarks[10];
-} FaceInfo;
 
 class UltraFaceEngine : public Engine {
  public:
@@ -42,7 +28,6 @@ class UltraFaceEngine : public Engine {
 
   void InitAll(const float det_score=0.6, const float nms_iou=0.5);
   std::vector<std::pair<cv::Rect, float>> Decode(const std::vector<std::vector<float> > &outputs, const cv::Size &img_size);
-
 
  private:
  void NMS(std::vector<std::pair<cv::Rect, float>> &input, std::vector<std::pair<cv::Rect, float>> &output);
