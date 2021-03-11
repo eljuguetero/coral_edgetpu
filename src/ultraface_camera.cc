@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -40,18 +41,20 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
   return args;
 }
 
-std::vector<float> GetInputFromImage(const cv::Mat &input_frame, const cv::Size &input_size,
-                                     const double scale=1/128, float mean_value=127.5, bool sw_ch=true)
-{
-    cv::Mat tmp;
-    cv::resize(input_frame, tmp, input_size);
-    if (sw_ch) cv::cvtColor(tmp,tmp,cv::COLOR_BGR2RGB);
-    tmp.convertTo(tmp,CV_32F);
-    tmp-=mean_value;
-    tmp*=scale;
-    cv::Mat flat = tmp.reshape(1, tmp.total()*tmp.channels());
-    std::vector<float> in_vec= tmp.isContinuous()? flat : flat.clone();
-    return in_vec;
+std::vector<float> GetInputFromImage(const cv::Mat& input_frame,
+                                     const cv::Size& input_size,
+                                     const double scale = 1 / 128,
+                                     float mean_value = 127.5,
+                                     bool sw_ch = true) {
+  cv::Mat tmp;
+  cv::resize(input_frame, tmp, input_size);
+  if (sw_ch) cv::cvtColor(tmp, tmp, cv::COLOR_BGR2RGB);
+  tmp.convertTo(tmp, CV_32F);
+  tmp -= mean_value;
+  tmp *= scale;
+  cv::Mat flat = tmp.reshape(1, tmp.total() * tmp.channels());
+  std::vector<float> in_vec = tmp.isContinuous() ? flat : flat.clone();
+  return in_vec;
 }
 
 int main(int argc, char** argv) {
@@ -118,18 +121,28 @@ int main(int argc, char** argv) {
   while (true) {
     cam_frame >> frame;
 
-    const auto& input = GetInputFromImage(frame,{320,240},1.0/128.0,127.5,true);
+    const auto& input =
+        GetInputFromImage(frame, {320, 240}, 1.0 / 128.0, 127.5, true);
     std::cout << "required_input_tensor_shape[2] "
               << required_input_tensor_shape[2] << std::endl;
     std::cout << "required_input_tensor_shape[1] "
               << required_input_tensor_shape[1] << std::endl;
     std::cout << "required_input_tensor_shape[3] "
               << required_input_tensor_shape[3] << std::endl;
-    engine.RunInference(input,outputs);
+
+    auto start = std::chrono::steady_clock::now();
+    engine.RunInference(input, outputs);
+    auto end = std::chrono::steady_clock::now();
+
+    std::cout << "Inference time : "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                       start)
+                     .count()
+              << " ms" << std::endl;
 
     auto faces_bbox = engine.Decode(outputs, frame.size());
-    for (auto bbox : faces_bbox){
-        cv::rectangle(frame, bbox.first, {255,1,127}, 4);
+    for (auto bbox : faces_bbox) {
+      cv::rectangle(frame, bbox.first, {255, 1, 127}, 4);
     }
     cv::imshow("DETECTIONS", frame);
     char c = (char)cv::waitKey(1);
