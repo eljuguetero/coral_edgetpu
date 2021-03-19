@@ -24,6 +24,7 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
                         cxxopts::value<std::string>())(
       "video_source", "Video source.",
       cxxopts::value<int>()->default_value("0"))(
+      "gui", "gui enabled.", cxxopts::value<bool>()->default_value("false"))(
       "threshold", "Minimum confidence threshold.",
       cxxopts::value<float>()->default_value("0.3"))(
       "edgetpu", "To run with EdgeTPU.",
@@ -63,6 +64,7 @@ int main(int argc, char** argv) {
   const auto& model_path = args["model_path"].as<std::string>();
   const auto threshold = args["threshold"].as<float>();
   const auto with_edgetpu = args["edgetpu"].as<bool>();
+  const auto with_gui = args["gui"].as<bool>();
   auto image_height = args["height"].as<int>();
   auto image_width = args["width"].as<int>();
   const auto source = args["video_source"].as<int>();
@@ -144,7 +146,7 @@ int main(int argc, char** argv) {
     for (auto bbox : faces_bbox) {
       cv::rectangle(frame, bbox.first, {255, 1, 127}, 4);
     }
-    cv::imshow("DETECTIONS", frame);
+    if (with_gui) cv::imshow("DETECTIONS", frame);
     char c = (char)cv::waitKey(1);
     if (c == 27) break;
   }
