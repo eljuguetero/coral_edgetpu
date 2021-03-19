@@ -24,6 +24,7 @@ cxxopts::ParseResult parse_args(int argc, char **argv) {
                         cxxopts::value<std::string>())(
       "video_source", "Video source.",
       cxxopts::value<int>()->default_value("0"))(
+      "gui", "gui enabled.", cxxopts::value<bool>()->default_value("false"))(
       "Pose_threshold", "Minimum pose confidence threshold.",
       cxxopts::value<float>()->default_value("0.3"))(
       "Keypoint_threshold", "Minimum key-point confidence threshold",

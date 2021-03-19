@@ -27,6 +27,7 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
       cxxopts::value<int>()->default_value("0"))(
       "threshold", "Minimum confidence threshold.",
       cxxopts::value<float>()->default_value("0.1"))(
+      "gui", "gui enabled.", cxxopts::value<bool>()->default_value("false"))(
       "verbose", "To run in verbose mode.",
       cxxopts::value<bool>()->default_value("false"))(
       "edgetpu", "To run with EdgeTPU.",

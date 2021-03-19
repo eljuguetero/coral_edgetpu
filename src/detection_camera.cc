@@ -25,6 +25,7 @@ cxxopts::ParseResult parse_args(int argc, char** argv) {
       "label_path", "Path to label file.", cxxopts::value<std::string>())(
       "video_source", "Video source.",
       cxxopts::value<int>()->default_value("0"))(
+      "gui", "gui enabled.", cxxopts::value<bool>()->default_value("false"))(
       "threshold", "Minimum confidence threshold.",
       cxxopts::value<float>()->default_value("0.5"))(
       "edgetpu", "To run with EdgeTPU.",
