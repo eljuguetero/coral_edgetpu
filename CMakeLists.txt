@@ -36,7 +36,7 @@ set(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
 set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
 
 # Setting Lib path
-set(TF_LITE_LIB "/usr/local/lib/libtensorflow-lite.a")
+set(TF_LITE_LIB "tensorflow-lite -ledgetpu -ldl")
 
 include_directories(/opt/tensorflow/tensorflow/lite/tools/make/downloads/eigen)
 
