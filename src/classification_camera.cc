@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
   auto image_width = args["width"].as<int>();
   const auto source = args["video_source"].as<int>();
   const bool verbose = args["verbose"].as<bool>();
+  const auto with_gui = args["gui"].as<bool>();
 
   std::cout << std::endl << "Model Path : " << model_path << std::endl;
   std::cout << "Pose Threshold : " << label_path << std::endl;
@@ -129,7 +130,7 @@ int main(int argc, char** argv) {
 
     const auto& class_result =
         engine.ClassifyWithOutputVector(results, threshold, verbose);
-    edge::ClassificationEngine::img_overlay(frame, class_result);
+    if (with_gui) edge::ClassificationEngine::img_overlay(frame, class_result);
 
     char c = (char)cv::waitKey(25);
     if (c == 27) break;

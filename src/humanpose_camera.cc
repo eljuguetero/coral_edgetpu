@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
   const auto &image_height = args["height"].as<int>();
   const auto &image_width = args["width"].as<int>();
   const auto &source = args["video_source"].as<int>();
+  const auto with_gui = args["gui"].as<bool>();
 
   std::cout << std::endl << "Model Path : " << model_path << std::endl;
   std::cout << "Pose Threshold : " << pose_threshold << std::endl;
@@ -122,10 +123,12 @@ int main(int argc, char **argv) {
 
     const auto &detection_result =
         engine.PoseEstimateWithOutputVector(raw_results, pose_threshold);
-    edge::HumanPoseEngine::img_overlay(
-        frame, detection_result, keypoint_threshold,
-        required_input_tensor_shape[2], required_input_tensor_shape[1],
-        camera_width, camera_height);
+
+    if (with_gui)
+      edge::HumanPoseEngine::img_overlay(
+          frame, detection_result, keypoint_threshold,
+          required_input_tensor_shape[2], required_input_tensor_shape[1],
+          camera_width, camera_height);
 
     char c = (char)cv::waitKey(25);
     if (c == 27) break;

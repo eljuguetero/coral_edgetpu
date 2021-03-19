@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
   auto image_height = args["height"].as<int>();
   auto image_width = args["width"].as<int>();
   const auto source = args["video_source"].as<int>();
+  const auto with_gui = args["gui"].as<bool>();
 
   std::cout << std::endl << "Model Path : " << model_path << std::endl;
   std::cout << "Pose Threshold : " << label_path << std::endl;
@@ -124,8 +125,9 @@ int main(int argc, char** argv) {
 
     const auto& detection_result =
         engine.DetectWithOutputVector(results, threshold);
-    edge::DetectionEngine::img_overlay(frame, detection_result, image_width,
-                                       image_height);
+    if (with_gui)
+      edge::DetectionEngine::img_overlay(frame, detection_result, image_width,
+                                         image_height);
 
     char c = (char)cv::waitKey(25);
     if (c == 27) break;
