@@ -1,57 +1,44 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.7)
 project(egdetpu_video_inference)
 find_package( OpenCV REQUIRED)
+
+option(WITH_INF_ENGINE "Enable OpenVino Inference Engine support" ON)
+if(WITH_INF_ENGINE)
+  set(CMAKE_INSTALL_RPATH
+    "/opt/intel/openvino/opencv/lib"
+    "/opt/intel/openvino/inference_engine/lib/intel64"
+    "/opt/intel/openvino/inference_engine/lib/aarch64"
+    "/opt/intel/openvino/inference_engine/lib/armv7l"
+    "/opt/intel/openvino/inference_engine/external/tbb/lib"
+    "/opt/intel/openvino/inference_engine/external/mkltiny_lnx/lib"
+    "/opt/intel/openvino/deployment_tools/ngraph/lib"
+  )
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--as-needed")
+  add_definitions(-DWITH_INF_ENGINE)
+endif(WITH_INF_ENGINE)
+
+option(WITH_GTK "Enable GTK support" OFF)
+if(WITH_GTK)
+  add_definitions(-DWITH_GTK)
+endif(WITH_GTK)
+
+FIND_LIBRARY(LIB_EDGETPU NAMES edgetpu)
+
+find_package(Eigen3)
 
 set(CMAKE_C_FLAGS "-Wall -pthread")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -lstdc++")
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -lstdc++ -ldl")
 set(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
 set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
 
-# GET CPU Architechture
-if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
-    message("Building for x86_64 platform.")
-    set(ARCH "k8")
-    set(TF_COMMAND make -j8 BUILD_WITH_NNAPI=false -C ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow -f tensorflow/lite/tools/make/Makefile lib)
-    set(TF_INSTALL_PREFIX "linux_x86_64")
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
-    message("Building for aarch64 platform.")
-    set(ARCH "${CMAKE_SYSTEM_PROCESSOR}")
-    set(TF_INSTALL_PREFIX "generic-aarch64_armv8-a")
-    set(CROSS_PREFIX "aarch64-linux-gnu-")
-    set(TF_COMMAND make TARGET=generic-aarch64 TARGET_ARCH=armv8-a -C ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow -f tensorflow/lite/tools/make/Makefile CC=${CROSS_PREFIX}g++ CXX=${CROSS_PREFIX}g++ AR=${CROSS_PREFIX}ar CFLAGS=-fpermissive lib)
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
-    message("Building for armv7l platform using the rpi script from tensorflow.")
-    set(ARCH "${CMAKE_SYSTEM_PROCESSOR}")
-    set(TF_INSTALL_PREFIX "rpi_armv7l")
-    set(CROSS_PREFIX "arm-linux-gnueabihf-")
-    set(TF_COMMAND make -j4 TARGET=rpi TARGET_ARCH=armv7l -C ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow -f tensorflow/lite/tools/make/Makefile CC=${CROSS_PREFIX}g++ CXX=${CROSS_PREFIX}g++ AR=${CROSS_PREFIX}ar CFLAGS=-fpermissive lib)
-else()
-    message(FATAL_ERROR "Not implemented to build for: ${CMAKE_SYSTEM_PROCESSOR}")
-endif()
-
-message("System ARCH is ${CMAKE_SYSTEM_PROCESSOR} ${ARCH}")
-
-include(ExternalProject)
-
-
-# Must match with commit that libedgetpu.so was built from.
-set(TENSORFLOW_COMMIT d855adfc5a0195788bf5f92c3c7352e638aa1109)
-ExternalProject_Add(tensorflow
-    GIT_REPOSITORY https://github.com/tensorflow/tensorflow
-    GIT_TAG ${TENSORFLOW_COMMIT}
-    PREFIX "tensorflow"
-    CONFIGURE_COMMAND ./tensorflow/lite/tools/make/download_dependencies.sh
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND ${TF_COMMAND}
-    BUILD_BYPRODUCTS libtensorflow-lite.a ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
-    BUILD_BYPRODUCTS libtensorflow-lite.a ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
-    INSTALL_COMMAND cp -f ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/gen/${TF_INSTALL_PREFIX}/lib/libtensorflow-lite.a ${CMAKE_BINARY_DIR}/
-)
 # Setting Lib path
-set(TF_LITE_LIB "${CMAKE_BINARY_DIR}/libtensorflow-lite.a")
-set(LIB_EDGETPU "${CMAKE_SOURCE_DIR}/libedgetpu/direct/${ARCH}/libedgetpu.so.1.0")
+set(TF_LITE_LIB "/usr/local/lib/libtensorflow-lite.a")
+
+include_directories(/opt/tensorflow/tensorflow/lite/tools/make/downloads/eigen)
 
 # Setting all include and link directories.
 ##########################################################################################################################
@@ -82,9 +69,9 @@ include_directories(${CMAKE_SOURCE_DIR}/include/humanpose_engine)
 
 ##########################################################################################################################
 include_directories(${CMAKE_SOURCE_DIR}/include/thirdparty/cxxopts)
-include_directories(${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/)
-include_directories(${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/absl/)
-include_directories(${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/flatbuffers/include)
+include_directories(/opt/tensorflow/)
+include_directories(/opt/tensorflow/tensorflow/lite/tools/make/downloads/absl/)
+include_directories(/opt/tensorflow/tensorflow/lite/tools/make/downloads/flatbuffers/include)
 include_directories(${CMAKE_BINARY_DIR}/glog_install/include)
 ##########################################################################################################################
 link_directories(${CMAKE_BINARY_DIR})
@@ -101,13 +88,12 @@ add_library(pose_decoder
         include/humanpose_engine/posenet_decoder.h
         include/humanpose_engine/posenet_decoder_op.h)
 target_link_libraries(pose_decoder ${TF_LITE_LIB})
-add_dependencies(pose_decoder tensorflow)
 
 add_library(engine
         src/common_engine/engine.cc
         include/common_engine/engine.h)
 target_link_libraries(engine label_utils pose_decoder ${TF_LITE_LIB})
-add_dependencies(engine label_utils pose_decoder tensorflow)
+add_dependencies(engine label_utils pose_decoder)
 
 add_library(classification_engine
         src/classification_engine/classification_engine.cc
@@ -140,35 +126,35 @@ add_dependencies(humanpose_engine engine pose_decoder)
 
 add_executable(classification_camera
         src/classification_camera.cc
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
+        /opt/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
+        /opt/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
         )
 target_link_libraries(classification_camera image_preprocessing classification_engine engine label_utils ${OpenCV_LIBS} ${TF_LITE_LIB} ${LIB_EDGETPU})
 add_dependencies(classification_camera image_preprocessing classification_engine engine label_utils )
 
 add_executable(detection_camera
         src/detection_camera.cc
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
+        /opt/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
+        /opt/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
         )
 target_link_libraries(detection_camera image_preprocessing detection_engine engine label_utils ${OpenCV_LIBS} ${TF_LITE_LIB} ${LIB_EDGETPU})
 add_dependencies(detection_camera image_preprocessing detection_engine engine label_utils )
 
 add_executable(ultraface_camera
         src/ultraface_camera.cc
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
+        /opt/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
+        /opt/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
         )
 target_link_libraries(ultraface_camera image_preprocessing ultraface_engine engine label_utils ${OpenCV_LIBS} ${TF_LITE_LIB} ${LIB_EDGETPU})
 add_dependencies(ultraface_camera image_preprocessing ultraface_engine engine label_utils )
 
 add_executable(humanpose_camera
         src/humanpose_camera.cc
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
-        ${CMAKE_BINARY_DIR}/tensorflow/src/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
+        /opt/tensorflow/tensorflow/lite/tools/make/downloads/fft2d/fftsg.c
+        /opt/tensorflow/tensorflow/lite/tools/optimize/sparsity/format_converter.cc
         )
 target_link_libraries(humanpose_camera image_preprocessing humanpose_engine engine label_utils pose_decoder ${OpenCV_LIBS} ${TF_LITE_LIB} ${LIB_EDGETPU})
-add_dependencies(humanpose_camera image_preprocessing humanpose_engine engine label_utils pose_decoder tensorflow)
+add_dependencies(humanpose_camera image_preprocessing humanpose_engine engine label_utils pose_decoder)
 
 
 
