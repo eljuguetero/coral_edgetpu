@@ -125,12 +125,6 @@ int main(int argc, char** argv) {
 
     const auto& input =
         GetInputFromImage(frame, {320, 240}, 1.0 / 128.0, 127.5, true);
-    std::cout << "required_input_tensor_shape[2] "
-              << required_input_tensor_shape[2] << std::endl;
-    std::cout << "required_input_tensor_shape[1] "
-              << required_input_tensor_shape[1] << std::endl;
-    std::cout << "required_input_tensor_shape[3] "
-              << required_input_tensor_shape[3] << std::endl;
 
     auto start = std::chrono::steady_clock::now();
     engine.RunInference(input, outputs);
